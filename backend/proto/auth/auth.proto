@@ -1,0 +1,109 @@
+syntax = "proto3";
+package auth;
+
+
+option go_package = "auth.v1;authv1";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: { title: "Auth Service"; version: "1.0" };
+  host: "localhost:8080";
+  schemes: HTTP;
+};
+
+service Auth {
+  rpc Register (RegisterRequest) returns (RegisterResponse){
+    option (google.api.http) = {
+      post: "/auth/register",
+      body: "*"
+    };
+  };
+  rpc Verify (VerifyRequest) returns (VerifyResponse){
+    option (google.api.http) = {
+      post: "/auth/verify",
+      body: "*"
+    };
+  };
+  rpc Login (LoginRequest) returns (LoginResponse){
+    option (google.api.http) = {
+      post: "/auth/login",
+      body: "*"
+    };
+  };
+  rpc NewPass (NewPassRequest) returns (NewPassResponse){
+    option (google.api.http) = {
+      post: "/auth/newpass",
+      body: "*"
+    };
+  }
+  rpc ValidateRestoreToken (ValidateTokenRequest) returns (ValidateTokenResponse) {
+    option (google.api.http) = {
+      post: "/auth/validate-reset-token",
+      body: "*"
+    };
+  };
+  rpc SetNewPassword (SetNewPassRequest) returns (SetNewPassResponse) {
+    option (google.api.http) = {
+      post: "/auth/reset-password",
+      body: "*"
+    };
+  };
+}
+
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  bool success = 1;
+}
+
+message VerifyRequest {
+  string email = 1;
+  string code = 2;
+}
+
+message VerifyResponse {
+  bool success = 1;
+  string token = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message NewPassRequest {
+  string email = 1;
+}
+
+message NewPassResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool success = 1;
+  string email = 2;
+}
+
+message SetNewPassRequest {
+  string token = 1;
+  string newPass = 2;
+}
+
+message SetNewPassResponse {
+  bool success = 1;
+}
+

@@ -1,0 +1,161 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: always
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT}:5432"
+    command: >
+      sh -c "docker-entrypoint.sh postgres &
+      sleep 2;
+      psql -U postgres -d expense -c 'CREATE DATABASE superset_metadata;' || true;
+      wait"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/migrations
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d expense" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - postgres
+    restart: on-failure
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}?sslmode=${DB_SSLMODE}",
+      "up"
+    ]
+    volumes:
+      - ./migrations:/migrations
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.auth
+    ports:
+      - "${AUTH_SERVICE_PORT}:50051"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GOOGLE_PASS=${GOOGLE_PASS}
+      - GOOGLE_FROM=${GOOGLE_FROM}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
+      - REDIS_EXTERNAL_PORT=${REDIS_EXTERNAL_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  expenses-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.expenses
+    ports:
+      - "${EXPENSES_SERVICE_PORT}:50052"
+    environment:
+      - SUPERSET_USERNAME=${SUPERSET_USERNAME}
+      - SUPERSET_PASSWORD=${SUPERSET_PASSWORD}
+      - SUPERSET_DASHBOARD_ID=${SUPERSET_DASHBOARD_ID}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - EXPENSES_SERVICE_PORT=${EXPENSES_SERVICE_PORT}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - REDIS_EXTERNAL_PORT=${REDIS_EXTERNAL_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    ports:
+      - "${GATEWAY_EXTERNAL_PORT}:8080"
+    environment:
+      - GATEWAY_PORT=${GATEWAY_EXTERNAL_PORT}
+      - AUTH_HOST=${AUTH_HOST}
+      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
+      - EXPENSES_HOST=${EXPENSES_HOST}
+      - EXPENSES_SERVICE_PORT=${EXPENSES_SERVICE_PORT}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      - auth-service
+    networks:
+      - app-network
+
+  superset:
+    image: apache/superset:4.0.0
+    container_name: superset_app
+    user: "root"
+    restart: unless-stopped
+    ports:
+      - "${SUPERSET_EXTERNAL_PORT}:8088"
+    env_file:
+      - ./backend/superset/.env-non-dev
+    volumes:
+      - ./backend/superset/docker:/app/docker
+      - superset_home:/app/superset_home
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  superset-init:
+    image: apache/superset:4.0.0
+    container_name: superset_init
+    command: [ "/app/docker/docker-init.sh" ]
+    env_file:
+      - ./backend/superset/.env-non-dev
+    user: "root"
+    volumes:
+      - ./backend/superset/docker:/app/docker
+      - superset_home:/app/superset_home
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+  postgres_data:
+  superset_home:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,13 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ ./
+RUN go build -o /bin/auth ./cmd/auth/main.go
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /bin/auth .
+CMD ["./auth"]
+
