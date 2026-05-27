@@ -72,10 +72,9 @@ func LoadConfig() *Config {
 			Addr: getEnvString("REDIS_ADDR", "redis:6379"),
 		},
 		SuperSet: SuperSetConfig{
-			DashboardID: os.Getenv("SUPERSET_DASHBOARD_ID"),
-			Username:    os.Getenv("SUPERSET_USERNAME"),
-			Password:    os.Getenv("SUPERSET_PASSWORD"),
-			Port:        getEnvInt("SUPERSET_EXTERNAL_PORT", 8088),
+			Username: os.Getenv("SUPERSET_USERNAME"),
+			Password: os.Getenv("SUPERSET_PASSWORD"),
+			Port:     getEnvInt("SUPERSET_EXTERNAL_PORT", 8088),
 		},
 		Auth: ServiceConfig{
 			Host:    getEnvString("AUTH_HOST", "auth-service"),

@@ -121,7 +121,7 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 
 	userID, err := jwt.GetUserIDFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("unauthorized: %w", err)
+		return nil, status.Errorf(codes.Unauthenticated, "ОШИБКА JWT: %v", err)
 	}
 
 	authBody, _ := json.Marshal(map[string]string{
@@ -132,9 +132,13 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 
 	resp, err := http.Post("http://superset:"+strconv.Itoa(cfg.SuperSet.Port)+"/api/v1/security/login", "application/json", bytes.NewBuffer(authBody))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to login to superset: %v", err)
+		return nil, status.Errorf(codes.Internal, "ОШИБКА LOGIN СЕТЬ: %v", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, status.Errorf(codes.Internal, "ОШИБКА LOGIN СТАТУС: %d", resp.StatusCode)
+	}
 
 	var authResp SupersetAuthResponse
 	json.NewDecoder(resp.Body).Decode(&authResp)
@@ -146,7 +150,7 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 			LastName:  "User",
 		},
 		Resources: []SupersetResource{
-			{Type: "dashboard", ID: cfg.SuperSet.DashboardID},
+			{Type: "dashboard", ID: req.DashboardId},
 		},
 		RLS: []SupersetRLS{
 			{Clause: fmt.Sprintf("operation_date >= '%s'", req.StartDate)},
@@ -156,6 +160,7 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 	}
 
 	guestBody, _ := json.Marshal(guestReq)
+
 	client := &http.Client{}
 	httpReq, _ := http.NewRequest("POST", "http://superset:8088/api/v1/security/guest_token/", bytes.NewBuffer(guestBody))
 	httpReq.Header.Set("Authorization", "Bearer "+authResp.AccessToken)
@@ -164,9 +169,14 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 
 	guestResp, err := client.Do(httpReq)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get guest token: %v", err)
+		return nil, status.Errorf(codes.Internal, "ОШИБКА GUEST СЕТЬ: %v", err)
 	}
 	defer guestResp.Body.Close()
+	if guestResp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(guestResp.Body)
+		return nil, status.Errorf(codes.Internal, "SUPERSET ОТКЛОНИЛ ЗАПРОС (Код %d). Ответ: %s. ID в запросе был: '%s'",
+			guestResp.StatusCode, string(bodyBytes), req.DashboardId)
+	}
 
 	var tokenData struct {
 		Token string `json:"token"`
@@ -175,6 +185,6 @@ func (s *ExpensesService) GetSupersetToken(ctx context.Context, req *expensesv1.
 
 	return &expensesv1.GetSupersetTokenResponse{
 		Token:       tokenData.Token,
-		DashboardId: cfg.SuperSet.DashboardID,
+		DashboardId: req.DashboardId,
 	}, nil
 }

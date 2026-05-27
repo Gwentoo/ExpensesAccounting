@@ -61,9 +61,10 @@ message UploadStatementResponse {
 }
 
 message GetSupersetTokenRequest {
-  string start_date = 2;
-  string end_date = 3;
-  string account_name = 4;
+  string start_date = 1;
+  string end_date = 2;
+  string account_name = 3;
+  string dashboard_id = 4;
 }
 
 message GetSupersetTokenResponse {

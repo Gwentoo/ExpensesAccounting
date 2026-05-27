@@ -97,6 +97,9 @@
         },
         "accountName": {
           "type": "string"
+        },
+        "dashboardId": {
+          "type": "string"
         }
       }
     },

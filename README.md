@@ -16,7 +16,6 @@ REDIS_ADDR=redis:6379
 REDIS_EXTERNAL_PORT=6379
 
   #Superset
-SUPERSET_DASHBOARD_ID=YOUR_DASHBOARD_UUID (КАК ЕГО ПОЛУЧИТЬ В ПУНКТЕ 3)
 SUPERSET_USERNAME=admin
 SUPERSET_PASSWORD=admin
 SUPERSET_EXTERNAL_PORT=8088
@@ -39,7 +38,7 @@ GOOGLE_FROM=YOUR_GOOGLE_GMAIL
   #JWT
 JWT_SECRET_KEY=YOUR_SECRET_KEY
 ```
-Изменить `SUPERSET_DASHBOARD_ID`, `GOOGLE_PASS`, `GOOGLE_FROM`, `JWT_SECRET_KEY`
+Изменить `GOOGLE_PASS`, `GOOGLE_FROM`, `JWT_SECRET_KEY`
 ### 2. Получение GOOGLE_PASS
 * [Пароли приложений](https://myaccount.google.com/apppasswords?continue=https://myaccount.google.com/security)
 * Создать приложение и получить код вида "abcd efgh ijkl mnop"
@@ -51,12 +50,12 @@ JWT_SECRET_KEY=YOUR_SECRET_KEY
 make build
 make start
 ```
-* В браузере заходим на `localhost:<SUPERSET_EXTERNAL_PORT>`
-* Логинимся, используя `SUPERSET_USERNAME` и `SUPERSET_PASSWORD`
-* В Dashboards импортируем архив `dashboard_export_20260303T023346.zip`
+* В браузере заходим на `localhost:8088`
+* Логинимся, используя `admin` и `admin`
+* В Dashboards импортируем архив `dashboard_export_20260527T000604.zip`
 * В Datasets выбираем базу данных и в редактировании меняем XXXXXXXX на пароль
 * Возвращаемся в Dashboards, выбираем нужный, жмем на 3 точки сверху и выбираем `Embed Dashboard`
-* Вставляем id в .env `SUPERSET_DASHBOARD_ID`
+* Вставляем uuid в `/web-app/.env` в поле `REACT_APP_DASHBOARD_OVERVIEW`
 * Из корня проекта выполняем команду 
 ```Exec
 docker-compose up --build

@@ -96,7 +96,7 @@ export async function setNewPass(token: string, newPass: string) {
     return res.json();
 }
 
-export async function getSupersetToken(startDate: string, endDate: string) {
+export async function getSupersetToken(startDate: string, endDate: string, dashboardId: string) {
     const token = localStorage.getItem("user_token");
     const res = await fetch(`${API_URL}/v1/expenses/superset-token`, {
         method: "POST",
@@ -107,7 +107,8 @@ export async function getSupersetToken(startDate: string, endDate: string) {
         },
         body: JSON.stringify({
             start_date: startDate,
-            end_date: endDate
+            end_date: endDate,
+            dashboard_id: dashboardId
         }),
     });
 

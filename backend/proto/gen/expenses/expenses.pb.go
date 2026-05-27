@@ -132,6 +132,7 @@ type GetSupersetTokenRequest struct {
 	StartDate     string                 `protobuf:"bytes,2,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
 	EndDate       string                 `protobuf:"bytes,3,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
 	AccountName   string                 `protobuf:"bytes,4,opt,name=account_name,json=accountName,proto3" json:"account_name,omitempty"`
+	DashboardId   string                 `protobuf:"bytes,5,opt,name=dashboard_id,json=dashboardId,proto3" json:"dashboard_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -183,6 +184,13 @@ func (x *GetSupersetTokenRequest) GetEndDate() string {
 func (x *GetSupersetTokenRequest) GetAccountName() string {
 	if x != nil {
 		return x.AccountName
+	}
+	return ""
+}
+
+func (x *GetSupersetTokenRequest) GetDashboardId() string {
+	if x != nil {
+		return x.DashboardId
 	}
 	return ""
 }
@@ -249,12 +257,13 @@ const file_expenses_expenses_proto_rawDesc = "" +
 	"\acontent\x18\x02 \x01(\fR\acontent\"Z\n" +
 	"\x17UploadStatementResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12%\n" +
-	"\x0eprocessed_rows\x18\x02 \x01(\x05R\rprocessedRows\"v\n" +
+	"\x0eprocessed_rows\x18\x02 \x01(\x05R\rprocessedRows\"\x99\x01\n" +
 	"\x17GetSupersetTokenRequest\x12\x1d\n" +
 	"\n" +
 	"start_date\x18\x02 \x01(\tR\tstartDate\x12\x19\n" +
 	"\bend_date\x18\x03 \x01(\tR\aendDate\x12!\n" +
-	"\faccount_name\x18\x04 \x01(\tR\vaccountName\"S\n" +
+	"\faccount_name\x18\x04 \x01(\tR\vaccountName\x12!\n" +
+	"\fdashboard_id\x18\x05 \x01(\tR\vdashboardId\"S\n" +
 	"\x18GetSupersetTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
 	"\fdashboard_id\x18\x02 \x01(\tR\vdashboardId2\x86\x02\n" +

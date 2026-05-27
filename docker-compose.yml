@@ -10,7 +10,7 @@ services:
       - "${POSTGRES_EXTERNAL_PORT}:5432"
     command: >
       sh -c "docker-entrypoint.sh postgres &
-      sleep 2;
+      sleep 10;
       psql -U postgres -d expense -c 'CREATE DATABASE superset_metadata;' || true;
       wait"
     volumes:
@@ -81,7 +81,6 @@ services:
     environment:
       - SUPERSET_USERNAME=${SUPERSET_USERNAME}
       - SUPERSET_PASSWORD=${SUPERSET_PASSWORD}
-      - SUPERSET_DASHBOARD_ID=${SUPERSET_DASHBOARD_ID}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - POSTGRES_USER=${POSTGRES_USER}

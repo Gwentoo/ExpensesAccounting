@@ -11,11 +11,25 @@ export default function DashboardScreen() {
     const dashboardRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [startDate, setStartDate] = useState('2024-01-01');
-    const [endDate, setEndDate] = useState('2026-03-01');
+    const getDefaultDates = () => {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        return {
+            start: firstDay.toLocaleDateString('en-CA'),
+            end: now.toLocaleDateString('en-CA')
+        };
+    };
+
+    const initialDates = getDefaultDates();
+
+    const [startDate, setStartDate] = useState(initialDates.start);
+    const [endDate, setEndDate] = useState(initialDates.end);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const dashboard_id = process.env.REACT_APP_DASHBOARD_OVERVIEW;
+
 
     useEffect(() => {
         const renderChart = async () => {
@@ -24,7 +38,7 @@ export default function DashboardScreen() {
 
             try {
 
-                const res = await getSupersetToken(startDate, endDate);
+                const res = await getSupersetToken(startDate, endDate, String(dashboard_id));
 
                 if (!res.token || !res.dashboardId) {
                     console.error("Бэкенд не вернул необходимые данные:", res);
@@ -39,6 +53,7 @@ export default function DashboardScreen() {
                     mountPoint: dashboardRef.current,
                     fetchGuestToken: async () => res.token,
                     dashboardUiConfig: {
+                        hideTab: true,
                         hideTitle: true,
                         hideChartControls: true,
                         filters: { visible: false, expanded: false }
@@ -80,49 +95,28 @@ export default function DashboardScreen() {
 
     return (
         <div className="dashboard-page">
-            <header className="dashboard-header">
-                <div className="header-content">
-                    <h1>Аналитика расходов</h1>
-                    <button onClick={handleLogout} className="logout-btn">Выйти</button>
+            <header className="compact-header">
+                <div className="header-left">
+                    <h1>Финансы</h1>
+                    <div className="date-picker-group">
+                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} title="Начало" />
+                        <span className="date-separator">—</span>
+                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} title="Конец" />
+                    </div>
+                </div>
+
+                <div className="header-right">
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} accept=".csv" />
+                    <button className="action-btn upload" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                        {uploading ? "..." : "Загрузить CSV"}
+                    </button>
+                    <button className="action-btn logout" onClick={() => navigate('/login')}>Выход</button>
                 </div>
             </header>
 
-            <main className="dashboard-main">
-                <section className="filter-section">
-                    <div className="filters">
-                        <div className="input-group">
-                            <label>Период с</label>
-                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                        </div>
-                        <div className="input-group">
-                            <label>по</label>
-                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                        </div>
-                    </div>
-
-                    <div className="upload-block">
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            style={{ display: 'none' }}
-                            accept=".csv"
-                        />
-                        <button
-                            className="upload-btn"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
-                        >
-                            {uploading ? "Загрузка..." : "Загрузить выписку"}
-                        </button>
-                    </div>
-
-                    {(loading || uploading) && <div className="loading-indicator">Обновление данных...</div>}
-                </section>
-
-                <section className="chart-container">
-                    <div ref={dashboardRef} className="superset-embed" />
-                </section>
+            <main className="dashboard-content">
+                {loading && <div className="overlay-loader">Обновление графиков...</div>}
+                <div ref={dashboardRef} className="superset-container" />
             </main>
         </div>
     );

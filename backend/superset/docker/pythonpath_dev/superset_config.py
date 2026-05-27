@@ -98,6 +98,17 @@ class CeleryConfig(object):
         },
     }
 
+from superset.security import SupersetSecurityManager
+
+class CustomSecurityManager(SupersetSecurityManager):
+    def is_guest_user(self, user=None):
+        # Если прилетает LocalProxy, Werkzeug упадет при проверке типов,
+        # разворачиваем его или проверяем наличие атрибута гостя
+        if hasattr(user, '_get_current_object'):
+            user = user._get_current_object()
+        return super().is_guest_user(user)
+
+SECURITY_MANAGER_CLASS = CustomSecurityManager
 
 CELERY_CONFIG = CeleryConfig
 
@@ -117,9 +128,10 @@ DASHBOARD_CACHE_CONFIG = {'CACHE_TYPE': 'NullCache'}
 SQLLAB_CTAS_NO_LIMIT = True
 GUEST_TOKEN_JWT_SECRET = "darkprince"
 ENABLE_CORS = True
+ENABLE_CORS = True
 CORS_OPTIONS = {
     'allow_headers': ['*'],
-    'allow_origin': ['http://localhost:3000'],
+    'origins': ['http://localhost:3000', 'http://10.0.2.2:*', 'http://localhost:*'],
     'supports_credentials': True,
 }
 
@@ -129,7 +141,7 @@ HTTP_HEADERS = {
 
 TALISMAN_CONFIG = {
     "content_security_policy": {
-        "frame-ancestors": ["http://localhost:3000", "http://localhost:3001", "localhost:*"],
+        "frame-ancestors": ["http://localhost:3000", "http://localhost:3001", "localhost:*", 'http://10.0.2.2:*'],
         "object-src": ["'none'"],
         "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     },
@@ -137,6 +149,7 @@ TALISMAN_CONFIG = {
     "frame_options": None,
 }
 
+AUTH_ROLE_PUBLIC = 'Public'
 GUEST_ROLE_NAME = 'Gamma'
 PUBLIC_ROLE_LIKE_GAMMA = True
 
